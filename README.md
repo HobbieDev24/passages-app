@@ -2,7 +2,7 @@
 
 Passages is a free Mac app that allows you to read and export highlighted text from Apple Books. You can either export it is a local file or add your highlights to Notion.
 
-## Disclosurs
+## Disclosures
 
 - Passages is not affiliated with Apple or Notion. It is free and open source under the [MIT license](LICENSE).
 - There's no form of tracking, monetization, premium features etc.
@@ -11,7 +11,7 @@ Passages is a free Mac app that allows you to read and export highlighted text f
 
 ## Install
 
-1. Download [**Passages.dmg**](https://github.com/HobbieDev24/passages-app/releases/latest/download/Passages.dmg)
+1. Download [**Passages.dmg**](https://github.com/HobbieDev24/passages-app/releases/download/v1.0.14/Passages.dmg)
 2. Open the disk image and drag **Passages** onto **Applications**.
 
 **Current release limitation:** the app has a local signature and is not yet signed with an Apple Developer ID or notarized by Apple. macOS may block a downloaded copy on first launch. After attempting to open it, go to **System Settings → Privacy & Security**, choose **Open Anyway**, and confirm.
