@@ -1,0 +1,37 @@
+# Generated builds and release packages
+.build/
+.swiftpm/
+dist/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+*.app/
+*.dmg
+*.dSYM/
+
+# Local files and editor settings
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.log
+tmp/
+exports/
+
+# Credentials, signing material, and private library data
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.pem
+*.key
+*.cer
+*.mobileprovision
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# Curated installer published with the repository
+!releases/Passages.dmg
