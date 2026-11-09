@@ -5,7 +5,7 @@ public final class BooksDatabase {
     public struct Location {
         public let libraryDB: URL
         public let annotationDB: URL
-        public let bookInfoCacheDB: URL?
+        public let bookInfoCacheDBs: [URL]
         public var container: URL = BooksDatabase.defaultContainer
     }
 
@@ -47,22 +47,24 @@ public final class BooksDatabase {
         )
         guard let annotation else { throw LookupError.annotationStoreNotFound }
 
-        let bookInfoCache = bookInfoCacheURL(container: container)
+        let bookInfoCaches = bookInfoCacheURLs(container: container)
 
-        return Location(libraryDB: library, annotationDB: annotation, bookInfoCacheDB: bookInfoCache, container: container)
+        return Location(libraryDB: library, annotationDB: annotation, bookInfoCacheDBs: bookInfoCaches, container: container)
     }
 
-    private static func bookInfoCacheURL(container: URL) -> URL? {
+    private static func bookInfoCacheURLs(container: URL) -> [URL] {
         let cacheDir = container.deletingLastPathComponent()
             .appendingPathComponent("Library/Caches")
         let fm = FileManager.default
         guard let entries = fm.enumerator(at: cacheDir,
             includingPropertiesForKeys: [.contentModificationDateKey],
-            options: [.skipsHiddenFiles]) else { return nil }
+            options: [.skipsHiddenFiles]) else { return [] }
         return entries.compactMap { $0 as? URL }
             .filter { $0.lastPathComponent.hasPrefix("AEBookInfo") && $0.pathExtension == "sqlite" }
-            .sorted { modificationDate($0) > modificationDate($1) }
-            .first
+            .sorted {
+                let left = modificationDate($0), right = modificationDate($1)
+                return left == right ? $0.path < $1.path : left > right
+            }
     }
 
     private static func modificationDate(_ url: URL) -> Date {
@@ -106,29 +108,17 @@ public final class BooksDatabase {
 
         var result: [Book] = []
         for (assetID, summary) in counts where summary.count > 0 {
-            let count = summary.count
-            let coverPath = coverProvider.coverURL(for: assetID)?.path
             let key = Self.metadataKey(assetID)
-            if let primary = allBooks[key] ?? fallback[key] {
-                let cached = fallback[key]
-                let title = primary.title.trimmingCharacters(in: .whitespacesAndNewlines)
-                let author = primary.author.trimmingCharacters(in: .whitespacesAndNewlines)
-                result.append(Book(
-                    id: assetID,
-                    title: title.isEmpty ? (cached?.title ?? "") : primary.title,
-                    author: author.isEmpty ? (cached?.author ?? "") : primary.author,
-                    genre: primary.genre, path: primary.path, coverURL: primary.coverURL,
-                    localCoverPath: coverPath, highlightCount: count
-                ))
-            } else {
-                result.append(Book(
-                    id: assetID,
-                    title: "Unknown Book",
-                    author: "",
-                    localCoverPath: coverPath,
-                    highlightCount: count
-                ))
-            }
+            guard let primary = allBooks[key] else { continue }
+            let cached = fallback[key]
+            let title = Self.nonempty(primary.title) ?? Self.nonempty(cached?.title) ?? "Unknown Book"
+            let author = Self.nonempty(primary.author) ?? Self.nonempty(cached?.author) ?? ""
+            result.append(Book(
+                id: assetID, title: title, author: author,
+                genre: primary.genre ?? cached?.genre, path: primary.path, coverURL: primary.coverURL,
+                localCoverPath: coverProvider.coverURL(for: assetID)?.path,
+                highlightCount: summary.count
+            ))
         }
         return result.sorted {
             let leftDate = counts[$0.id]?.modified ?? 0
@@ -159,7 +149,33 @@ public final class BooksDatabase {
     }
 
     public func loadBookInfoCache() throws -> [String: Book] {
-        guard let cacheURL = location.bookInfoCacheDB else { return [:] }
+        var merged: [String: Book] = [:]
+        for cacheURL in location.bookInfoCacheDBs {
+            // Old or incompatible caches must not prevent reading the current library.
+            guard let books = try? readBookInfoCache(cacheURL) else { continue }
+            for (key, older) in books {
+                guard let newer = merged[key] else {
+                    merged[key] = older
+                    continue
+                }
+                merged[key] = Book(
+                    id: newer.id,
+                    title: Self.nonempty(newer.title) ?? older.title,
+                    author: Self.nonempty(newer.author) ?? older.author,
+                    genre: Self.nonempty(newer.genre) ?? older.genre
+                )
+            }
+        }
+        return merged
+    }
+
+    private static func nonempty(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func readBookInfoCache(_ cacheURL: URL) throws -> [String: Book] {
         let db = try SQLiteDatabase(readOnlyPath: cacheURL.path)
         guard db.tableExists("ZAEBOOKINFO") else { return [:] }
 
@@ -170,13 +186,14 @@ public final class BooksDatabase {
         let key = field(["ZDATABASEKEY", "ZASSETID", "ZBOOKID"])
         let title = field(["ZBOOKTITLE", "ZTITLE"])
         let author = field(["ZBOOKAUTHOR", "ZAUTHOR"])
-        guard key != "NULL", title != "NULL", author != "NULL" else {
+        guard key != "NULL" else {
             throw SQLiteError("Unrecognized Apple Books metadata cache schema")
         }
         let sql = """
         SELECT \(key), \(title), \(author), \(field(["ZGENRE"]))
         FROM ZAEBOOKINFO
-        WHERE \(key) IS NOT NULL;
+        WHERE \(key) IS NOT NULL
+          AND COALESCE(\(field(["ZDELETEDFLAG"])), 0) = 0;
         """
         let books = try db.query(sql) { row -> Book in
             Book(

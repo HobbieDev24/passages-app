@@ -25,7 +25,7 @@ fi
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 APP_NAME="Passages"
-VERSION="1.0.14"
+VERSION="1.0.15"
 BUNDLE_ID="com.passages.highlights"
 DIST_DIR="${ROOT}/dist"
 APP_DIR="${DIST_DIR}/${APP_NAME}.app"

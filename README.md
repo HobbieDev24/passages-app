@@ -11,7 +11,7 @@ Passages is a free Mac app that allows you to read and export highlighted text f
 
 ## Install
 
-1. Download [**Passages.dmg**](https://github.com/HobbieDev24/passages-app/releases/download/v1.0.14/Passages.dmg)
+1. Download [**Passages.dmg**](https://github.com/HobbieDev24/passages-app/releases/download/v1.0.15/Passages.dmg)
 2. Open the disk image and drag **Passages** onto **Applications**.
 
 **Current release limitation:** the app has a local signature and is not yet signed with an Apple Developer ID or notarized by Apple. macOS may block a downloaded copy on first launch. After attempting to open it, go to **System Settings → Privacy & Security**, choose **Open Anyway**, and confirm.
@@ -42,6 +42,7 @@ Once connected, select a book in the sidebar to read its highlights. Search by t
 ## Gotchas
 
 - Only books with text highlights appear. Standalone notes, bookmarks, and content that Apple Books does not expose as text highlights may not appear.
+- Highlights for books no longer listed in your Apple Books library are excluded, even if Apple Books retains their annotations. Books still listed in the library can appear without a local download.
 - Titles, authors, covers, and chapter names depend on information available locally. Missing information may appear as **Unknown Book**, **Unknown Author**, or a placeholder cover. Opening or downloading the book in Apple Books may help, but does not guarantee complete metadata.
 - Apple can change how Books stores its library, any future Apple Books update may be breaking.
 - If you want to reset the app -> choose **Passages → Reset Passages…** in the menu bar, then confirm **Reset and Quit**. This removes the saved Notion token, export preferences, Apple Books folder permission bookmark, and macOS privacy permissions for Passages. Reopen the app to see the welcome screen and connect Apple Books again.
