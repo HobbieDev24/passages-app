@@ -1,3 +1,5 @@
+<img width="1440" height="800" alt="passages_screenshot" src="https://github.com/user-attachments/assets/08056c44-376b-440f-9f08-bd949076db30" />
+
 # Passages
 
 Passages is a free Mac app that allows you to read and export highlighted text from Apple Books. You can either export it is a local file or add your highlights to Notion.
